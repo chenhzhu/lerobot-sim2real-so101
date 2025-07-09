@@ -1,0 +1,1 @@
+python lerobot_sim2real_so101/scripts/record_reset_distribution.py --env-id="SO101GraspCube-v1" --env-kwargs-json-path=env_config.json

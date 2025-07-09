@@ -1,11 +1,13 @@
 """Simple script to train a RGB PPO policy in simulation"""
 
+import maniskill_models
+
 from dataclasses import dataclass, field
 import json
 from typing import Optional
 import tyro
 
-from lerobot_sim2real.rl.ppo_rgb import PPOArgs, train
+from lerobot_sim2real_so101.rl.ppo_rgb import PPOArgs, train
 
 @dataclass
 class Args:

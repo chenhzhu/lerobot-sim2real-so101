@@ -2,6 +2,8 @@
 This script is used to evaluate a random or RL trained agent on a real robot using the LeRobot system.
 """
 
+import maniskill_models
+
 from dataclasses import dataclass
 import json
 import random
@@ -10,10 +12,10 @@ import gymnasium as gym
 import numpy as np
 import torch
 import tyro
-from lerobot_sim2real.config.real_robot import create_real_robot
-from lerobot_sim2real.rl.ppo_rgb import Agent
+from lerobot_sim2real_so101.config.real_robot import create_real_robot
+from lerobot_sim2real_so101.rl.ppo_rgb import Agent
 
-from lerobot_sim2real.utils.safety import setup_safe_exit
+from lerobot_sim2real_so101.utils.safety import setup_safe_exit
 from mani_skill.agents.robots.lerobot.manipulator import LeRobotRealAgent
 from mani_skill.envs.sim2real_env import Sim2RealEnv
 from mani_skill.utils.wrappers.flatten import FlattenRGBDObservationWrapper
@@ -36,7 +38,7 @@ class Args:
     robot more chances to recover from failures / solve the task."""
     num_episodes: Optional[int] = None
     """The number of episodes to evaluate for. If None, the evaluation will run until the user presses ctrl+c"""
-    env_id: str = "SO100GraspCube-v1"
+    env_id: str = "SO101GraspCube-v1"
     """The environment id to use for evaluation. This should be the same as the environment id used for training."""
     seed: int = 1
     """seed of the experiment"""
@@ -72,7 +74,7 @@ def main(args: Args):
     torch.manual_seed(args.seed)
 
     ### Create and connect the real robot, wrap it to make it interfaceable with ManiSkill sim2real environments ###    
-    real_robot = create_real_robot(uid="so100")
+    real_robot = create_real_robot(uid="so101")
     real_robot.connect()
     real_agent = LeRobotRealAgent(real_robot)
 

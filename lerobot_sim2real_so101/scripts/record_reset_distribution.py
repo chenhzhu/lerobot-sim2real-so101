@@ -1,3 +1,6 @@
+
+import maniskill_models
+
 import json
 import gymnasium as gym
 from dataclasses import dataclass
@@ -8,7 +11,7 @@ import tyro
 
 @dataclass
 class Args:
-    env_id: str = "SO100GraspCube-v1"
+    env_id: str = "SO101GraspCube-v1"
     """The environment id to use"""
     record_dir: str = "videos"
     """Directory to save recordings of the camera captured images. If none no recordings are saved"""

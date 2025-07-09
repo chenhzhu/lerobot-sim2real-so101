@@ -1,11 +1,14 @@
+
+import maniskill_models
+
 import json
 import time
 from typing import Optional
 import gymnasium as gym
 import torch
-from lerobot_sim2real.utils.safety import setup_safe_exit
+from lerobot_sim2real_so101.utils.safety import setup_safe_exit
 from mani_skill.utils.wrappers.flatten import FlattenRGBDObservationWrapper
-from lerobot_sim2real.config.real_robot import create_real_robot
+from lerobot_sim2real_so101.config.real_robot import create_real_robot
 from mani_skill.agents.robots.lerobot.manipulator import LeRobotRealAgent
 from mani_skill.envs.sim2real_env import Sim2RealEnv
 import cv2
@@ -18,7 +21,7 @@ import matplotlib.pyplot as plt
 
 @dataclass
 class Args:
-    env_id: str = "SO100GraspCube-v1"
+    env_id: str = "SO101GraspCube-v1"
     """The environment id to train on"""
     env_kwargs_json_path: Optional[str] = None
     """Path to a json file containing additional environment kwargs to use."""
@@ -76,19 +79,29 @@ def update_camera(sim_env):
     if "right" in active_keys:
         fov_offset += FOV_CHANGE_SPEED * delta_time
 
-    # update camera position and fov
-    pos = sim_env.unwrapped.base_camera_settings["pos"] + camera_offset
-    pose = sapien_utils.look_at(pos, sim_env.unwrapped.base_camera_settings["target"])
-    sim_env.unwrapped.camera_mount.set_pose(pose)
-    sim_env.unwrapped._sensors["base_camera"].camera.set_fovy(
-        sim_env.unwrapped.base_camera_settings["fov"] + fov_offset
+    # update (base) camera position and fov
+    # pos = sim_env.unwrapped.base_camera_settings["pos"] + camera_offset
+    # pose = sapien_utils.look_at(pos, sim_env.unwrapped.base_camera_settings["target"])
+    # sim_env.unwrapped.camera_mount.set_pose(pose)
+    # sim_env.unwrapped._sensors["base_camera"].camera.set_fovy(
+    #     sim_env.unwrapped.base_camera_settings["fov"] + fov_offset
+    # )
+
+    # chenhzhu: For now only calibrate the 'camera' on the SO101 robot.
+    sim_env.unwrapped._sensors["hand_camera"].camera.set_fovy(
+        sim_env.unwrapped._sensors["hand_camera"].camera.fovy + fov_offset
     )
 
     if len(active_keys) > 0:
-        print("current_camera_position", pose.p)
+        # print("current_camera_position", pose.p)
+        # print(
+        #     "current_camera_fov",
+        #     sim_env.unwrapped.base_camera_settings["fov"] + fov_offset,
+        # )
+
         print(
             "current_camera_fov",
-            sim_env.unwrapped.base_camera_settings["fov"] + fov_offset,
+            sim_env.unwrapped._sensors["hand_camera"].camera.fovy,
         )
         help_message_printed = False  # Reset the flag when there's movement
     elif (
@@ -121,7 +134,8 @@ def on_key_release(event):
     active_keys.discard(event.key)
 
 def main(args: Args):
-    real_robot = create_real_robot(uid="so100")
+    real_robot = create_real_robot(uid="so101")
+    print(">>>>> Finish creating real robot agent <<<<<")
     real_robot.connect()
     real_agent = LeRobotRealAgent(real_robot)
 
@@ -145,6 +159,7 @@ def main(args: Args):
     setup_safe_exit(sim_env, real_env, real_agent)
 
     real_obs, _ = real_env.reset()
+    print(">>>>> Finish reset real environment <<<<<")
 
     # for plotting robot camera reads
     fig = plt.figure()
@@ -159,6 +174,8 @@ def main(args: Args):
 
     fig.canvas.mpl_connect("key_press_event", on_key_press)
     fig.canvas.mpl_connect("key_release_event", on_key_release)
+
+    print(">>>>> Finish initialize the plot <<<<<")
 
     print("Camera alignment: Move real camera to align with the sim camera, close figure to exit")
     while True:

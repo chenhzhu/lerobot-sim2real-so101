@@ -49,3 +49,55 @@ Note that depending on what hardware you are using you might need to install add
 We currently provide a tutorial on how to train a RGB based model controlling an SO100 robot arm in simulation and deploying that zero-shot in the real world to grasp cubes. Follow the tutorial [here](./docs/zero_shot_rgb_sim2real.md). Note while SO101 looks similar to SO100, we have found that there are some key differences that make sim2real fail for SO101, we will updaye this repository once SO101 is modelled correctly.
 
 We are also working on a tutorial showing you how to make your own environments ready for sim2real, stay tuned!
+
+
+## SO101 Sim2Real
+This repo contains SO101 robot assset and a simple environment of grasp cube for SO101, which adapted from mani_skill/env/tasks/digital_twins.
+
+The sim2real scripts are replicated from [lerobot-sim2real](https://github.com/StoneT2000/lerobot-sim2real/tree/main). 
+
+* Additional denpendency install
+```bash
+pip install tensorboard
+```
+
+* Lerobot install
+```bash
+git clone https://github.com/huggingface/lerobot.git
+cd lerobot
+git checkout a989c795587d122299275c65a38ffdd0a804b8dc
+pip install -e ".[feetech]"
+# Note that the latest lerobot repo chanegd the file structure (lerobot/common folder was deleted and the inside files are moved to lerobot/)
+```
+
+* Check simulation camera and object spawn region
+```bash
+PYTHONPATH=$(pwd) python lerobot_sim2real_so101/scripts/record_reset_distribution.py --env-id="SO101GraspCube-v1" --env-kwargs-json-path=env_config.json
+```
+
+* Get an image for greenscreening to bridge the sim2real visual gap
+```bash
+PYTHONPATH=$(pwd) python lerobot_sim2real_so101/scripts/capture_background_image.py --env-id="SO101GraspCube-v1" --env-kwargs-json-path=env_config.json --out=greenscreen.png
+```
+
+* Camera alignment
+```bash
+PYTHONPATH=$(pwd) python lerobot_sim2real_so101/scripts/camera_alignment.py --env-id="SO101GraspCube-v1" --env-kwargs-json-path=env_config.json
+```
+
+* Train PPO RGB in simulation
+```bash
+seed=3
+PYTHONPATH=$(pwd) python lerobot_sim2real_so101/scripts/train_ppo_rgb.py --env-id="SO101GraspCube-v1" --env-kwargs-json-path=env_config.json \
+  --ppo.seed=${seed} \
+  --ppo.num_envs=1024 --ppo.num-steps=16 --ppo.update_epochs=8 --ppo.num_minibatches=32 \
+  --ppo.total_timesteps=40_000_000 --ppo.gamma=0.9 \
+  --ppo.num_eval_envs=16 --ppo.num-eval-steps=64 --ppo.no-partial-reset \
+  --ppo.exp-name="ppo-SO101GraspCube-v1-rgb-${seed}" \
+  --ppo.track --ppo.wandb_project_name "SO101-ManiSkill"
+```
+
+* Real world deployment (Need to fill in ckpt path)
+```bash
+PYTHONPATH=$(pwd) python lerobot_sim2real_so101/scripts/eval_ppo_rgb.py --env_id="SO101GraspCube-v1" --checkpoint=path/to/ckpt.pt --no-continuous-eval --control-freq=15 --env-kwargs-json-path=env_config.json
+```
